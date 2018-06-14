@@ -6,7 +6,8 @@
 #  
 # Author: 
 # Edward Lin hsingwel@umich.edu
-# v0.2: improve efficiency 
+# v0.2: improve efficiency
+# v0.3: work for Python3
 #
 ##########################################################################
 
@@ -46,7 +47,7 @@ class propagate:
         return E
         
     def kep_to_xyz(self, a, e, i, arg, node, M):
-        E = np.array(map(self.cal_E, e, M))    
+        E = np.array(list(map(self.cal_E, e, M)))    
         # compute true anomaly v
         v = 2 * np.arctan2((1 + e)**0.5*np.sin(E/2.), (1 - e)**0.5*np.cos(E/2.))
         # compute the barycentric distance r
@@ -104,6 +105,6 @@ if __name__ == '__main__':
     eris2 = np.array([6.783405036515818E+01, 4.384475538521589E-01, 4.399285116152476E+01*np.pi/180., 1.512196225116616E+02*np.pi/180., 3.597654134974561E+01*np.pi/180., 2.041397376676136E+02*np.pi/180., 2457375.5, 2458470.5])
     object = np.array([sedna0, sedna1, sedna2, eris0, eris1, eris2])
     p = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7])
-    print p.ra*180/np.pi, p.dec*180/np.pi
+    print(p.ra*180/np.pi, p.dec*180/np.pi)
 
 
