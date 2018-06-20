@@ -67,7 +67,7 @@ class propagate:
         x_earth, y_earth, z_earth = earth.at(t).position.au # earth IRCS position
         earth_dis = (x_earth**2 + y_earth**2 + z_earth**2)**0.5
         
-        for i in range(3): 
+        for i in range(3): #iterate 3 time to calibate the effect of light traveling time
             # transfer ecliptic to IRCS and shift to Geocentric
             X = X0 - x_earth 
             Y = Y0 * np.cos(epsilon) - Z0 * np.sin(epsilon) - y_earth
