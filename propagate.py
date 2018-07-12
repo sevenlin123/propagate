@@ -55,24 +55,6 @@ class propagate:
         E = newton(f, E0, args=(M, e))
         return E
         
-    def kep_to_xyz2(self, a, e, i, arg, node, M, u):
-        # compute eccentric anomaly E
-        E = np.array(list(map(self.cal_E, e, M)))    
-        # compute true anomaly v
-        v = 2 * np.arctan2((1 + e)**0.5*np.sin(E/2.), (1 - e)**0.5*np.cos(E/2.))
-        # compute the distance to the central body r
-        r = a * (1 - e*np.cos(E))
-        # compute the specific angular momentum h
-        h = (u * a * (1-e**2)) **0.5
-        # compute X,Y,Z
-        X = r * (np.cos(node) * np.cos(arg + v) - np.sin(node) * np.sin(arg + v) * np.cos(i))
-        Y = r * (np.sin(node) * np.cos(arg + v) + np.cos(node) * np.sin(arg + v) * np.cos(i))
-        Z = r * (np.sin(i) * np.sin(arg + v))
-        VX = (X * h * e) * np.sin(v) / (r*a*(1-e**2)) - h/r *(np.cos(node) * np.sin(arg + v) + np.sin(node) * np.cos(arg + v) * np.cos(i))
-        VY = (Y * h * e) * np.sin(v) / (r*a*(1-e**2)) - h/r *(np.sin(node) * np.sin(arg + v) - np.cos(node) * np.cos(arg + v) * np.cos(i))
-        VZ = (Z * h * e) * np.sin(v) / (r*a*(1-e**2)) + h/r * np.sin(i) * np.cos(arg + v)
-        return X, Y, Z, VX, VY, VZ
-
     def kep_to_xyz(self, a, e, i, arg, node, M, u):
         # compute eccentric anomaly E
         E = np.array(list(map(self.cal_E, e, M)))            
@@ -174,7 +156,6 @@ class propagate:
         # transfer back to keplerian elements
         a, e, i, arg, node, M = self.xyz_to_kep(X, Y, Z, VX, VY, VZ, self.u_helio)
         return a, e, i, arg, node, M
-
 
     def xyz_to_equa(self, X0, Y0, Z0, epoch):
         c = 173.1446323547978
