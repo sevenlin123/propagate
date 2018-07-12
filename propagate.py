@@ -156,7 +156,6 @@ class propagate:
         return a, e, i, arg, node, M
 
     def bary_to_helio(self, a0, e0, i0, arg0, node0, M0, epoch0):
-        print(a0, e0, i0, arg0, node0, M0)
         # This is barycentric xyz postion       
         X0, Y0, Z0, VX0, VY0, VZ0 =  self.kep_to_xyz(a0, e0, i0, arg0, node0, M0, self.u_bary)
         # extract barycentric postion of Sun
