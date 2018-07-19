@@ -1,6 +1,6 @@
-##########################################################################
+#############################################################################
 #
-# propagate.py, version 0.5
+# propagate.py, version 0.5.1
 #
 # calculate equatorial sky positions for given Keplerian orbits and epochs     
 #  
@@ -10,8 +10,13 @@
 # v0.3: work for Python3
 # v0.4: optional heliocentric elements input 
 # v0.4.2: heliocentric elements work correctly
-# v0.5: add bary_to_helio function
-##########################################################################
+# v0.5: add bary_to_helio function (not use during propagation)
+# v0.5.1: add attributes 'delta','r', 'phase_angle', 'elong' 
+#         'delta': geocentric distance
+#         'r': barycentric distance
+#         'phase_angle': phase angle in radian
+#         'elong': solar elongation in radian
+##############################################################################
 
 from __future__ import division
 import numpy as np
@@ -28,8 +33,8 @@ class propagate:
       
     """
     def __init__(self, a, e, i, arg, node, M0, epoch, obs_date, helio=False):
-        self.u_bary = 2.9630927492415936E-04 # standard gravitational parameter 
-        self.u_helio = 2.9591220828559093E-04 
+        self.u_bary = 2.9630927492415936E-04 # standard gravitational parameter, sqrt(GM), M is the mass of sun + all planets 
+        self.u_helio = 2.9591220828559093E-04 # sqrt(GM), M is the mass of sun
         self.epsilon =  23.43929111 * np.pi/180. # obliquity
         if helio:
             self.a, self.e, self.i, self.arg, self.node, self.M0 =  self.helio_to_bary(a,  e, i, arg, node, M0, epoch)
@@ -46,7 +51,7 @@ class propagate:
         # compute M for given epoch
         self.M = (self.u_bary/self.a**3)**0.5 * (self.obs_date - self.epoch) + self.M0
         self.X, self.Y, self.Z, self.VX, self.VY, self.VZ = self.kep_to_xyz(self.a, self.e, self.i, self.arg, self.node, self.M, self.u_bary)
-        self.ra, self.dec = self.xyz_to_equa(self.X, self.Y, self.Z, self.obs_date)
+        self.ra, self.dec, self.delta, self.r, self.phase_angle, self.elong = self.xyz_to_equa(self.X, self.Y, self.Z, self.obs_date)
  
     def cal_E(self, e, M):
         # compute eccentric anomaly E
@@ -159,14 +164,15 @@ class propagate:
 
     def xyz_to_equa(self, X0, Y0, Z0, epoch):
         c = 173.1446323547978
+        r = (X0**2 + Y0**2 + Z0**2)**0.5
         earth = planets['earth']
-        earth = earth + Topos('30.169 S', '70.804 W', elevation_m=2200)
+        earth = earth + Topos('30.169 S', '70.804 W', elevation_m=2200) #turn off the topocentric calculation should run much faster
         ts = load.timescale()
         t = ts.tai(jd=epoch+0.000428) #37 leap seconds
         x_earth, y_earth, z_earth = earth.at(t).position.au # earth IRCS position
         earth_dis = (x_earth**2 + y_earth**2 + z_earth**2)**0.5
         for i in range(3): 
-            # transfer ecliptic to IRCS and shift to Geocentric
+            # transfer ecliptic to ICRS and shift to Geocentric (topocentric)
             X = X0 - x_earth 
             Y = Y0 * np.cos(self.epsilon) - Z0 * np.sin(self.epsilon) - y_earth
             Z = Y0 * np.sin(self.epsilon) + Z0 * np.cos(self.epsilon) - z_earth
@@ -177,7 +183,12 @@ class propagate:
         # Cartesian to spherical coordinate
         dec = np.arcsin(Z/(X**2+Y**2+Z**2)**0.5)
         ra = np.arctan2(Y, X) % (2*np.pi)
-        return ra, dec
+        X0_icrs = X0
+        Y0_icrs = Y0 * np.cos(self.epsilon) - Z0 * np.sin(self.epsilon)
+        Z0_icrs = Y0 * np.sin(self.epsilon) + Z0 * np.cos(self.epsilon)      
+        phase_angle = np.arccos((X0_icrs*X+Y0_icrs*Y+Z0_icrs*Z)/(r*delta))
+        elong = np.arccos((X0_icrs*x_earth+Y0_icrs*y_earth+Z0_icrs*z_earth)/(r*earth_dis))
+        return ra, dec, delta, r, phase_angle, elong
 
         
 if __name__ == '__main__':
@@ -201,11 +212,11 @@ if __name__ == '__main__':
     object = np.array([BP519])
     p = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7])
     #print(p.a, p.e, p.i, p.arg, p.node, p.M)
-    print(p.ra*180/np.pi, p.dec*180/np.pi, p.X, p.Y, p.Z, p.VX, p.VY, p.VZ)
+    print(p.ra*180/np.pi, p.dec*180/np.pi, p.phase_angle*180/np.pi, p.elong*180/np.pi)
     object = np.array([BP519_helio])
     p1 = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7], helio=True)
     #print(p1.a, p1.e, p1.i, p1.arg, p1.node, p1.M)
-    print(p1.ra*180/np.pi, p1.dec*180/np.pi, p1.X, p1.Y, p1.Z, p1.VX, p1.VY, p1.VZ)
+    print(p1.ra*180/np.pi, p1.dec*180/np.pi, p.phase_angle*180/np.pi, p.elong*180/np.pi)
     print(((p1.ra-p.ra)**2+(p1.dec-p.dec)**2)**0.5*180/np.pi*3600)
     #object = np.array([bp_helio])
     #p2 = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7], helio=True)
