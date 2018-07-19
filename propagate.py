@@ -33,8 +33,8 @@ class propagate:
       
     """
     def __init__(self, a, e, i, arg, node, M0, epoch, obs_date, helio=False):
-        self.u_bary = 2.9630927492415936E-04 # standard gravitational parameter, sqrt(GM), M is the mass of sun + all planets 
-        self.u_helio = 2.9591220828559093E-04 # sqrt(GM), M is the mass of sun
+        self.u_bary = 2.9630927492415936E-04 # standard gravitational parameter, GM, M is the mass of sun + all planets 
+        self.u_helio = 2.9591220828559093E-04 # GM, M is the mass of sun
         self.epsilon =  23.43929111 * np.pi/180. # obliquity
         if helio:
             self.a, self.e, self.i, self.arg, self.node, self.M0 =  self.helio_to_bary(a,  e, i, arg, node, M0, epoch)
@@ -169,7 +169,7 @@ class propagate:
         earth = earth + Topos('30.169 S', '70.804 W', elevation_m=2200) #turn off the topocentric calculation should run much faster
         ts = load.timescale()
         t = ts.tai(jd=epoch+0.000428) #37 leap seconds
-        x_earth, y_earth, z_earth = earth.at(t).position.au # earth IRCS position
+        x_earth, y_earth, z_earth = earth.at(t).position.au # earth ICRS position
         earth_dis = (x_earth**2 + y_earth**2 + z_earth**2)**0.5
         for i in range(3): 
             # transfer ecliptic to ICRS and shift to Geocentric (topocentric)
