@@ -16,6 +16,7 @@
 #         'r': barycentric distance
 #         'phase_angle': phase angle in radian
 #         'elong': solar elongation in radian
+# v0.5.2: correct elong calculations
 ##############################################################################
 
 from __future__ import division
@@ -51,7 +52,7 @@ class propagate:
         # compute M for given epoch
         self.M = (self.u_bary/self.a**3)**0.5 * (self.obs_date - self.epoch) + self.M0
         self.X, self.Y, self.Z, self.VX, self.VY, self.VZ = self.kep_to_xyz(self.a, self.e, self.i, self.arg, self.node, self.M, self.u_bary)
-        self.ra, self.dec, self.delta, self.r, self.phase_angle, self.elong = self.xyz_to_equa(self.X, self.Y, self.Z, self.obs_date)
+        self.ra, self.dec, self.delta, self.r, self.ltt, self.phase_angle, self.elong = self.xyz_to_equa(self.X, self.Y, self.Z, self.obs_date)
  
     def cal_E(self, e, M):
         # compute eccentric anomaly E
@@ -183,15 +184,14 @@ class propagate:
         # Cartesian to spherical coordinate
         dec = np.arcsin(Z/(X**2+Y**2+Z**2)**0.5)
         ra = np.arctan2(Y, X) % (2*np.pi)
-        X0_icrs = X0
-        Y0_icrs = Y0 * np.cos(self.epsilon) - Z0 * np.sin(self.epsilon)
-        Z0_icrs = Y0 * np.sin(self.epsilon) + Z0 * np.cos(self.epsilon)      
-        phase_angle = np.arccos((X0_icrs*X+Y0_icrs*Y+Z0_icrs*Z)/(r*delta))
-        elong = np.arccos((X0_icrs*x_earth+Y0_icrs*y_earth+Z0_icrs*z_earth)/(r*earth_dis))
-        return ra, dec, delta, r, phase_angle, elong
+        phase_angle = np.arccos(-(earth_dis**2-r**2-delta**2)/(2*r*delta))
+        elong = np.arccos(-(r**2-delta**2-earth_dis**2)/(2*delta*earth_dis))
+        return ra, dec, delta, r, ltt, phase_angle, elong
 
         
 if __name__ == '__main__':
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
     #sedna_ephem = propagate_pyephem(540.6238899789372, .859111497291054, 11.92859044711287, 311.100256264511, 144.5022446594254, 358.222163293174, 2456580.5, 2457375.5)
     sedna0 = np.array([5.074246374075075E+02, 8.498746087028334E-01, 1.192855886739805E+01*np.pi/180., 3.113066085007133E+02*np.pi/180., 1.444030959000094E+02*np.pi/180., 3.581035054464383E+02*np.pi/180., 2457375.5, 2457741.5])
     sedna1 = np.array([5.074246374075075E+02, 8.498746087028334E-01, 1.192855886739805E+01*np.pi/180., 3.113066085007133E+02*np.pi/180., 1.444030959000094E+02*np.pi/180., 3.581035054464383E+02*np.pi/180., 2457375.5, 2458106.5])
@@ -212,12 +212,20 @@ if __name__ == '__main__':
     object = np.array([BP519])
     p = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7])
     #print(p.a, p.e, p.i, p.arg, p.node, p.M)
-    print(p.ra*180/np.pi, p.dec*180/np.pi, p.phase_angle*180/np.pi, p.elong*180/np.pi)
-    object = np.array([BP519_helio])
-    p1 = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7], helio=True)
+    date = np.arange(2458362.5, 2458515.5, 1)
+    n_obs = len(date)
+    p = propagate(np.zeros(n_obs)+BP519[0], np.zeros(n_obs)+BP519[1], np.zeros(n_obs)+BP519[2], np.zeros(n_obs)+BP519[3], np.zeros(n_obs)+BP519[4], np.zeros(n_obs)+BP519[5], np.zeros(n_obs)+BP519[6], date)
+    #print(p.ra, p.dec)
+    c = SkyCoord(ra = list(p.ra*180/np.pi), dec = list(p.dec*180/np.pi), frame='icrs', unit='deg')
+    #for n, i in enumerate(date):
+        #print(i, c[n].ra.hms, c[n].dec.dms)
+     #   print('{0}:'.format(i), '{0:02.0f} {1:02.0f} {2:05.2f}'.format(c[n].ra.hms.h, c[n].ra.hms.m, c[n].ra.hms.s), '{0:02.0f} {1:02.0f} {2:05.2f}'.format(c[n].dec.dms .d, c[n].dec.signed_dms .m, c[n].dec.signed_dms .s))
+    
+    #object = np.array([BP519_helio])
+    #p1 = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7], helio=True)
     #print(p1.a, p1.e, p1.i, p1.arg, p1.node, p1.M)
-    print(p1.ra*180/np.pi, p1.dec*180/np.pi, p.phase_angle*180/np.pi, p.elong*180/np.pi)
-    print(((p1.ra-p.ra)**2+(p1.dec-p.dec)**2)**0.5*180/np.pi*3600)
+    #print(p1.ra*180/np.pi, p1.dec*180/np.pi, p.phase_angle*180/np.pi, p.elong*180/np.pi)
+    #print(((p1.ra-p.ra)**2+(p1.dec-p.dec)**2)**0.5*180/np.pi*3600)
     #object = np.array([bp_helio])
     #p2 = propagate(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6], object.T[7], helio=True)
     #print(p2.a, p2.e, p2.i, p2.arg, p2.node, p2.M)
