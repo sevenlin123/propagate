@@ -1,6 +1,6 @@
 #############################################################################
 #
-# propagate.py, version 0.5.1
+# propagate.py, version 0.5.2
 #
 # calculate equatorial sky positions for given Keplerian orbits and epochs     
 #  
