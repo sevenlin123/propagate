@@ -1,5 +1,16 @@
+#############################################################################
+#
+# helio_to_bary.py, version 0.1
+#
+# transfer heliocentric Keplerian elements to barycentric Keplerian elements    
+#  
+# Author: 
+# Edward Lin hsingwel@umich.edu
+#############################################################################
+
 from __future__ import division
 import numpy as np
+#Need skyfield (https://rhodesmill.org/skyfield/) to access JPL ephemeris
 from skyfield.api import Topos, Loader
 from scipy.optimize import newton
 
@@ -110,13 +121,14 @@ class transformation:
 
 def helio_to_bary(list_of_object):
         object = np.array(list_of_object)
-        h2b = transformation(object.T[0], object.T[1], object.T[2], object.T[3], object.T[4], object.T[5], object.T[6])
+        # the transformation class takes radians, please turn degrees to radians
+        h2b = transformation(object.T[0], object.T[1], object.T[2]*np.pi/180., object.T[3]*np.pi/180., object.T[4]*np.pi/180., object.T[5]*np.pi/180., object.T[6])
         elements = np.array([h2b.a, h2b.e, h2b.i, h2b.arg, h2b.node, h2b.M, h2b.epoch]).T
         return elements
 
 if __name__ == '__main__':
-        eris_helio = np.array([6.768797414697519E+01, 4.420790192749195E-01, 4.413609832595201E+01*np.pi/180., 1.511834587301832E+02*np.pi/180., 3.590950696773813E+01*np.pi/180., 2.044966970545773E+02*np.pi/180., 2457375.5])
-        GH137_helio = np.array([3.979291654743955E+01, 2.336699438884731E-01, 1.344241830596374E+01*np.pi/180., 1.536827090353943E+02*np.pi/180., 3.572856612008427E+01*np.pi/180., 2.338003676460184E+01*np.pi/180., 2458285.5])
-        bp_helio = np.array([420.48310521, 0.91645907, 0.9445533, 6.08211338, 2.35920844, 6.25364812, 2458285.5])
+        eris_helio = np.array([6.768797414697519E+01, 4.420790192749195E-01, 4.413609832595201E+01, 1.511834587301832E+02, 3.590950696773813E+01, 2.044966970545773E+02, 2457375.5])
+        GH137_helio = np.array([3.979291654743955E+01, 2.336699438884731E-01, 1.344241830596374E+01, 1.536827090353943E+02, 3.572856612008427E+01, 2.338003676460184E+01, 2458285.5])
+        bp_helio = np.array([420.48310521, 0.91645907, 0.9445533*180/np.pi, 6.08211338*180/np.pi, 2.35920844*180/np.pi, 6.25364812*180/np.pi, 2458285.5])
         bary = helio_to_bary([eris_helio, GH137_helio, bp_helio])
         print(bary)
