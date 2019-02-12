@@ -1,6 +1,6 @@
 #############################################################################
 #
-# propagate.py, version 0.5.2
+# propagate.py, version 0.6.1
 #
 # calculate equatorial sky positions for given Keplerian orbits and epochs     
 #  
@@ -18,6 +18,7 @@
 #         'elong': solar elongation in radian
 # v0.5.2: correct elong calculations
 # v0.6: add propagate_lite, a faster, inaccurate version of propagate
+# v0.6.1: change time to tt
 ##############################################################################
 
 from __future__ import division
@@ -130,7 +131,7 @@ class propagate:
         # extract barycentric postion of Sun
         sun = planets['Sun']
         ts = load.timescale()
-        t = ts.tai(jd=epoch0+0.000428) #37 leap seconds
+        t = ts.tt(jd=epoch0 ) #37 leap seconds
         x_sun, y_sun, z_sun = sun.at(t).position.au
         vx_sun, vy_sun, vz_sun = sun.at(t).velocity.au_per_d
         # now we have barycentric xyz postion 
@@ -150,7 +151,7 @@ class propagate:
         # extract barycentric postion of Sun
         sun = planets['Sun']
         ts = load.timescale()
-        t = ts.tai(jd=epoch0+0.000428) #37 leap seconds
+        t = ts.tt(jd=epoch0) #37 leap seconds
         x_sun, y_sun, z_sun = sun.at(t).position.au
         vx_sun, vy_sun, vz_sun = sun.at(t).velocity.au_per_d
         # now we have barycentric xyz postion 
@@ -170,7 +171,7 @@ class propagate:
         earth = planets['earth']
         earth = earth + Topos('30.169 S', '70.804 W', elevation_m=2200) #turn off the topocentric calculation should run much faster
         ts = load.timescale()
-        t = ts.tai(jd=epoch+0.000428) #37 leap seconds
+        t = ts.tt(jd=epoch)
         x_earth, y_earth, z_earth = earth.at(t).position.au # earth ICRS position
         earth_dis = (x_earth**2 + y_earth**2 + z_earth**2)**0.5
         for i in range(3): 
@@ -250,9 +251,8 @@ class propagate_lite(propagate):
         c = 173.1446323547978
         r = (X0**2 + Y0**2 + Z0**2)**0.5
         earth = planets['earth']
-        #earth = earth + Topos('30.169 S', '70.804 W', elevation_m=2200) #turn off the topocentric calculation should run much faster
         ts = load.timescale()
-        t = ts.tai(jd=epoch+0.000428) #37 leap seconds
+        t = ts.tt(jd=epoch)
         x_earth, y_earth, z_earth = earth.at(t).position.au # earth ICRS position
         earth_dis = (x_earth**2 + y_earth**2 + z_earth**2)**0.5
         # transfer ecliptic to ICRS and shift to Geocentric (topocentric)
